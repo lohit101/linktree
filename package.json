@@ -8,6 +8,7 @@
     "build": "next build",
     "start": "next start --hostname 127.0.0.1",
     "setup": "node scripts/setup.mjs",
+    "check:config": "node --conditions=react-server --import tsx scripts/check-config.ts",
     "typecheck": "tsc --noEmit",
     "test": "node --conditions=react-server --import tsx --test tests/*.test.ts",
     "test:e2e": "playwright test"

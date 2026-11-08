@@ -44,6 +44,9 @@ test("simulated local visitor receives links, can hide them, and can reopen them
   page.on("pageerror", error => errors.push(error.message));
   await page.goto("/");
   const email = page.getByRole("link", { name: "Email me e2e-only@example.com" });
+  const portrait = page.getByRole("img", { name: "Shilpa Bajaj's profile picture" });
+  await expect(portrait).toBeVisible();
+  await expect.poll(() => portrait.evaluate(image => (image as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
   await expect(email).toBeVisible();
   await expect(email).toHaveAttribute("href", "mailto:e2e-only@example.com");
   await expect(page.getByRole("link", { name: /Give me a call|Twitter|Pinterest/ })).toHaveCount(0);

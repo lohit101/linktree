@@ -68,9 +68,11 @@ The subscriber section clears on tab hiding/restoration and after five minutes. 
 
 The public profile works without Turnstile credentials. Subscriber access fails closed until configured.
 
+**For the current Vercel deployment, follow [the Vercel setup checklist](deploy/VERCEL.md).** Native Vercel client-IP headers are now supported, so a separate authenticated proxy is only required on other hosts. Vercel/serverless still requires real Turnstile credentials, a stable signing secret, the correct live `APP_ORIGIN`, and shared Redis.
+
 1. Set the exact HTTPS `APP_ORIGIN` without a trailing slash. Keep a stable random `SESSION_SECRET` of at least 32 characters across replicas. Generate secrets with `openssl rand -hex 48`. Set the contact, private bio and ntfy runtime variables on your production host; `.env.local` is not deployed automatically.
 2. Create a Managed Cloudflare Turnstile widget for the public hostname and set `TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY`. Production rejects test keys. Its interaction-only appearance requests extra interaction only when required by the provider.
-3. Put a trusted proxy in front of Next.js. Set a separate random `PROXY_SHARED_SECRET` of at least 32 characters on both sides. Incoming network headers are trusted only with this secret. Strip/overwrite incoming `X-Cloak-*` headers; never forward them unchanged or log the secret.
+3. On Vercel, the native runtime adapter uses Vercel's overwritten client-IP header. On other hosts, put a trusted proxy in front of Next.js. Set a separate random `PROXY_SHARED_SECRET` of at least 32 characters on both sides. Outside Vercel, incoming network headers are trusted only with this secret. Strip/overwrite incoming `X-Cloak-*` headers; never forward them unchanged or log the secret.
    - `deploy/cloudflare-worker.ts` forwards Cloudflare's client IP/country/timezone and optional Bot Management scores. Route it on the public hostname and set `ORIGIN_URL` to the separate Next.js HTTPS origin. Store the proxy secret in Worker secrets. Numeric Bot Management scoring requires an eligible plan.
    - `deploy/nginx.conf.example` supports a VPS. Replace the proxy secret, configure TLS and bind Node to loopback. If behind another proxy, configure real-IP handling only for that provider's trusted ranges. Do not trust arbitrary `X-Forwarded-For`.
 4. For serverless or replicas, set `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`. For exactly one long-lived Node process, explicitly set `SINGLE_PROCESS_MEMORY=true` instead. Shared state is needed for distributed challenge consumption and notification/access rate limits.
@@ -82,6 +84,7 @@ Untrusted direct-origin requests cannot obtain subscriber access. Challenges and
 
 ```sh
 npm run typecheck
+npm run check:config
 npm test
 npm run test:e2e
 npm run build
@@ -89,6 +92,6 @@ npm run build
 
 The browser suite uses isolated Google Chrome with fictional contacts, notifications explicitly disabled, port 3104 and `.next-test` output. It can coexist with the normal development server. Unit tests mock ntfy, so automated checks do not publish visitor data or spam the live topic. Tests cover public visibility for crawler UAs, protected destination/bio separation, session expiry/tampering/replay, forged network headers, private tap authorization, same-origin reporting, actual browser tap events, provider failure and automatic UA diagnostic expiry. They do not certify exclusion of real Meta review infrastructure.
 
-The design uses a centered Linktree-style layout, dark plum, neon violet, a circular initials avatar and stacked buttons. No real portrait was supplied. Design dials: variance 3 / motion 3 / density 3. The unused forest asset remains from the earlier theme ([photo source](https://unsplash.com/photos/hg5Tx6c_5nc)).
+The design uses a centered Linktree-style layout, dark plum, neon violet, the requested Instagram profile picture and stacked buttons. The picture is a local snapshot at `public/profile.jpg`, so visitors make no image request to Instagram and expiring CDN URLs are not embedded. To update it later, replace that file. Design dials: variance 3 / motion 3 / density 3. The unused forest asset remains from the earlier theme ([photo source](https://unsplash.com/photos/hg5Tx6c_5nc)).
 
 Sources: [ntfy publishing, topic access, caching and limits](https://docs.ntfy.sh/publish/), [Turnstile server validation](https://developers.cloudflare.com/turnstile/get-started/server-side-validation/), [Cloudflare bot scores](https://developers.cloudflare.com/bots/concepts/bot-score/), [robots.txt limitations](https://developers.google.com/search/docs/crawling-indexing/robots/intro).

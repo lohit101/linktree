@@ -1,6 +1,7 @@
 import "server-only";
 import { z } from "zod";
 import type { Contact } from "@/lib/contracts";
+import { isVercelRuntime } from "./platform";
 
 export class ProtectionError extends Error {
   constructor(public readonly status: number = 403) {
@@ -29,10 +30,11 @@ export function getAccessConfig() {
   if (!localDemo && (!siteKey || !challengeSecret)) throw new ProtectionError(503);
   if (production && (
     origin.protocol !== "https:" || localHosts.has(origin.hostname) ||
-    proxySecret.length < 32 || proxySecret === secret || /GENERATE_|REPLACE_/i.test(`${secret} ${proxySecret}`) ||
+    (!isVercelRuntime() && (proxySecret.length < 32 || proxySecret === secret)) ||
+    /GENERATE_|REPLACE_/i.test(`${secret} ${proxySecret}`) ||
     testKey.test(siteKey) || testKey.test(challengeSecret) ||
     (!(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) &&
-      process.env.SINGLE_PROCESS_MEMORY !== "true")
+      (isVercelRuntime() || process.env.SINGLE_PROCESS_MEMORY !== "true"))
   )) throw new ProtectionError(503);
 
   return { production, origin, secret, siteKey, challengeSecret, proxySecret, localDemo, threshold };

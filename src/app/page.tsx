@@ -1,4 +1,5 @@
 import { headers } from "next/headers";
+import Image from "next/image";
 import { after } from "next/server";
 import { IconHeart, IconSparkles } from "@tabler/icons-react";
 import { ContactAccess } from "@/components/contact-access";
@@ -27,7 +28,7 @@ export default async function Home() {
     </header>
     <main id="main" className="profile-layout">
       <div className="profile-intro">
-        <div className="avatar-ring"><div className="avatar" aria-hidden="true">{profile.initials}</div><span className="avatar-heart" aria-hidden="true"><IconHeart size={17} stroke={1.6} /></span></div>
+        <div className="avatar-ring"><div className="avatar"><Image src={profile.avatar} alt={`${profile.name}'s profile picture`} width={116} height={116} sizes="116px" preload className="avatar-photo" /></div><span className="avatar-heart" aria-hidden="true"><IconHeart size={17} stroke={1.6} /></span></div>
         <h1>{profile.name}</h1>
         <section className="about-section" aria-labelledby="about-heading">
           <h2 id="about-heading" className="sr-only">A bit about me</h2>

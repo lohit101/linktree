@@ -37,6 +37,7 @@ button:focus-visible, a:focus-visible { outline: 3px solid #efc8ff; outline-offs
 .avatar-ring { width: 116px; height: 116px; margin: 0 auto 25px; padding: 5px; position: relative; border: 1px solid #e0a0ff; border-radius: 50%; box-shadow: 0 0 14px #d19aff50, 0 0 55px #b32cdb35, inset 0 0 12px #e0a0ff40; }
 .avatar { width: 100%; height: 100%; display: grid; place-items: center; border-radius: 50%; background: linear-gradient(145deg, #50245f, #23112f 85%); border: 1px solid #9561a474; color: #f5d6ff; font-size: 32px; font-weight: 450; letter-spacing: -1.5px; text-shadow: 0 0 20px #d08ce677; }
 .avatar-heart { position: absolute; right: -2px; bottom: 1px; width: 29px; height: 29px; display: grid; place-items: center; background: #30123e; border: 1px solid #c885e3; color: #f0b7ff; border-radius: 50%; box-shadow: 0 0 12px #bf4ff64a; }
+.avatar-photo { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
 h1 { font-size: 30px; font-weight: 600; letter-spacing: -.9px; line-height: 1.2; margin: 0; }
 .profile-bio { margin: 15px auto 0; max-width: 410px; font-size: 14px; line-height: 1.8; color: #d2bedb; white-space: pre-line; text-wrap: pretty; }
 .contact-section { margin-top: 32px; width: 100%; }

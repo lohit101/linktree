@@ -92,6 +92,27 @@ test("Meta crawlers are identified; an ordinary Instagram in-app browser is not 
   assert.equal(isKnownCrawler(""), true);
 });
 
+test("Vercel network trust requires the server runtime; client-supplied platform and bot-score headers do not establish trust", () => {
+  const mode = process.env.NODE_ENV;
+  const vercel = process.env.VERCEL;
+  const values = new Headers({
+    "x-vercel-forwarded-for": "203.0.113.10", "x-vercel-ip-country": "IN",
+    "x-vercel-ip-timezone": "Asia/Kolkata", "x-cloak-bot-score": "99", "x-cloak-verified-bot": "true",
+  });
+  assert.equal(getNetwork(values, { proxySecret: "" }).trusted, false);
+  try {
+    Object.assign(process.env, { NODE_ENV: "production", VERCEL: "1" });
+    assert.deepEqual(getNetwork(values, { proxySecret: "" }), {
+      ip: "203.0.113.10", country: "IN", timezone: "Asia/Kolkata", trusted: true, botScore: null, verifiedBot: false,
+    });
+    values.set("x-vercel-forwarded-for", "203.0.113.10, 1.1.1.1");
+    assert.equal(getNetwork(values, { proxySecret: "" }).trusted, false);
+  } finally {
+    Object.assign(process.env, { NODE_ENV: mode });
+    if (vercel === undefined) delete process.env.VERCEL; else process.env.VERCEL = vercel;
+  }
+});
+
 test("no screen, IP, location, or history score can replace the server challenge", () => {
   assert.equal(scored({ challengePassed: false, returningVisitor: true,
     network: { ...network, trusted: true, ip: "1.1.1.1", country: "IN", timezone: "Asia/Kolkata", botScore: 99 } }).denied, true);

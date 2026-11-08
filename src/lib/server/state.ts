@@ -1,6 +1,7 @@
 import "server-only";
 import { Redis } from "@upstash/redis";
 import { ProtectionError } from "./config";
+import { isVercelRuntime } from "./platform";
 
 type Entry = { value: number; expires: number };
 const processState = globalThis as typeof globalThis & {
@@ -20,7 +21,7 @@ function redis() {
 }
 
 function checkMemoryAllowed() {
-  if (process.env.NODE_ENV === "production" && process.env.SINGLE_PROCESS_MEMORY !== "true") throw new ProtectionError(503);
+  if (process.env.NODE_ENV === "production" && (isVercelRuntime() || process.env.SINGLE_PROCESS_MEMORY !== "true")) throw new ProtectionError(503);
   if (memory.size >= 10000) {
     const now = Date.now();
     for (const [key, entry] of memory) if (entry.expires <= now) memory.delete(key);
