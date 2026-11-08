@@ -3,7 +3,7 @@
 
 /* A centered link-in-bio layout. Dark violet is intentional for this brief.
    Design dials: variance 3 / motion 3 / density 3. Circles for identity and tools;
-   20px corners for links and connection states. No real portrait was supplied. */
+   20px corners for links and connection states. Featured-link motion is intentional. */
 :root {
   --background: #100918;
   --ink: #faf2ff;
@@ -49,8 +49,18 @@ h2 { font-size: 12px; font-weight: 450; color: #c2a8ce; margin: 0; }
 .contact-list { display: grid; gap: 14px; }
 .contact-link { display: flex; gap: 16px; align-items: center; min-height: 84px; padding: 18px 22px; background: linear-gradient(110deg, #2a1638e6, #24142fe6); border: 1px solid #704786; border-radius: var(--radius); box-shadow: inset 0 1px 0 #efb5ff09, 0 5px 20px #07020b20; transition: transform 180ms, border-color 180ms, box-shadow 180ms; animation: enter 250ms ease-out both; }
 .contact-link:hover { transform: translateY(-3px); border-color: #d29aec; box-shadow: 0 0 25px #a653cb30; }
-.contact-link[data-kind="subscription"] { background: linear-gradient(110deg, #9433c7, #702aa6); border-color: #e0a3ff; box-shadow: 0 0 12px #d174ff30, 0 0 35px #b947e52b, inset 0 1px 0 #f4d2ff38; }
-.contact-link[data-kind="subscription"]:hover { box-shadow: 0 0 20px #d174ff55, 0 0 45px #b947e53b; }
+.contact-link[data-kind="subscription"] { position: relative; isolation: isolate; background: linear-gradient(110deg, #9833ca, #7024a5); border-color: #e7b5ff; box-shadow: 0 0 14px #d174ff45, 0 0 36px #b947e530, inset 0 1px 0 #f4d2ff45; }
+.contact-link[data-kind="subscription"]::before { content: ""; position: absolute; inset: -1px; z-index: -1; border-radius: inherit; box-shadow: 0 0 20px #d485ff70, 0 0 42px #b947e540; pointer-events: none; opacity: .3; animation: featured-glow 4.5s ease-in-out infinite; }
+.contact-link[data-kind="subscription"]:hover { box-shadow: 0 0 22px #d174ff70, 0 0 48px #b947e54b; border-color: #f4d6ff; }
+.contact-link[data-kind="subscription"] .contact-label { font-size: 16px; font-weight: 650; letter-spacing: -.2px; }
+.subscription-effects { position: absolute; inset: 0; border-radius: inherit; overflow: hidden; pointer-events: none; z-index: 0; }
+.subscription-effects::before { content: ""; position: absolute; width: 45%; height: 200%; top: -50%; left: 0; background: linear-gradient(105deg, transparent 32%, #ffffff12 50%, transparent 68%); opacity: 0; transform: translateX(-150%); animation: featured-shimmer 6.5s ease-in-out infinite; }
+.subscription-sparkle { position: absolute; color: #ffe5ff; opacity: 0; animation: featured-sparkle 4.8s ease-in-out infinite; }
+.sparkle-1 { left: 15%; top: 10%; width: 10px; height: 10px; animation-delay: -.3s; }
+.sparkle-2 { right: 25%; top: 11%; width: 13px; height: 13px; animation-delay: -1.5s; }
+.sparkle-3 { right: 8%; bottom: 12%; width: 11px; height: 11px; animation-delay: -2.7s; }
+.sparkle-4 { left: 56%; bottom: 8%; width: 9px; height: 9px; animation-delay: -3.9s; }
+.contact-emoji { font-size: 30px; line-height: 1; filter: drop-shadow(0 0 7px #d28bff65); }
 .contact-icon { width: 37px; height: 37px; display: grid; place-items: center; color: #eac7ff; flex-shrink: 0; }
 .contact-link[data-kind="subscription"] .contact-icon, .contact-link[data-kind="subscription"] .contact-arrow { color: #fff3ff; }
 .contact-copy { display: grid; gap: 6px; min-width: 0; flex: 1; }
@@ -74,6 +84,9 @@ h2 { font-size: 12px; font-weight: 450; color: #c2a8ce; margin: 0; }
 .sr-only { position: absolute; height: 1px; width: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 @keyframes breathe { 50% { opacity: .4; } }
 @keyframes enter { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes featured-glow { 0%, 100% { opacity: .25; } 50% { opacity: .8; } }
+@keyframes featured-shimmer { 0%, 40% { opacity: 0; transform: translateX(-150%); } 48% { opacity: 1; } 75%, 100% { opacity: 0; transform: translateX(350%); } }
+@keyframes featured-sparkle { 0%, 55%, 100% { opacity: 0; transform: scale(.5) rotate(-20deg); } 18%, 30% { opacity: .9; transform: scale(1) rotate(15deg); } }
 @media (max-width: 600px) {
   .site-shell { padding-inline: 23px; }
   .site-header { height: 72px; }
@@ -84,8 +97,10 @@ h2 { font-size: 12px; font-weight: 450; color: #c2a8ce; margin: 0; }
   .contact-section { margin-top: 30px; }
   .contact-link { min-height: 82px; padding: 17px; gap: 11px; }
   .contact-label { font-size: 14px; }
+  .contact-link[data-kind="subscription"] .contact-label { font-size: 15px; }
   .contact-detail { font-size: 11px; }
   .private-bio { font-size: 13px; max-width: 280px; }
 }
 @media (max-width: 360px) { .site-shell { padding-inline: 18px; } .profile-bio { font-size: 12px; } .contact-link { padding-inline: 13px; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+@media (prefers-reduced-motion: reduce) { .subscription-effects::before { display: none; } .subscription-sparkle { opacity: .45; transform: none; } }

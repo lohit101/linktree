@@ -38,6 +38,7 @@ export type Contact = {
   id: string;
   label: string;
   detail: string;
+  iconEmoji?: string;
   href: string;
   kind: "email" | "instagram" | "subscription";
 };

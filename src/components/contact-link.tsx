@@ -1,9 +1,9 @@
 "use client";
 
-import { IconArrowUpRight, IconBrandInstagram, IconHeart, IconMail } from "@tabler/icons-react";
+import { IconArrowUpRight, IconBrandInstagram, IconMail, IconSparkle } from "@tabler/icons-react";
 import type { Contact } from "@/lib/contracts";
 
-const icons = { instagram: IconBrandInstagram, email: IconMail, subscription: IconHeart };
+const icons = { instagram: IconBrandInstagram, email: IconMail, subscription: IconSparkle };
 
 export function ContactLink({ contact }: { contact: Contact }) {
   const Icon = icons[contact.kind];
@@ -18,7 +18,10 @@ export function ContactLink({ contact }: { contact: Contact }) {
   return <a className="contact-link" data-kind={contact.kind} href={contact.href}
     target={external ? "_blank" : undefined} rel="noopener noreferrer nofollow" referrerPolicy="no-referrer"
     onClick={report} onAuxClick={event => { if (event.button === 1) report(); }}>
-    <span className="contact-icon"><Icon size={21} stroke={1.6} aria-hidden="true" /></span>
+    {contact.kind === "subscription" && <span className="subscription-effects" aria-hidden="true">
+      {[1, 2, 3, 4].map(number => <IconSparkle key={number} className={`subscription-sparkle sparkle-${number}`} size={12} stroke={1.3} />)}
+    </span>}
+    <span className="contact-icon">{contact.iconEmoji ? <span className="contact-emoji" aria-hidden="true">{contact.iconEmoji}</span> : <Icon size={21} stroke={1.6} aria-hidden="true" />}</span>
     <span className="contact-copy"><span className="contact-label">{contact.label}</span><span className="contact-detail">{contact.detail}</span></span>
     <IconArrowUpRight className="contact-arrow" size={19} stroke={1.5} aria-hidden="true" />
   </a>;

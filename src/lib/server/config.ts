@@ -56,7 +56,7 @@ export function getPrivateContacts(): Contact[] {
   const value = process.env.CONTACT_FANVUE_URL?.trim();
   if (!value) return [];
   const url = checkedUrl(value, ["fanvue.com", "www.fanvue.com"]);
-  return [{ id: "subscription", kind: "subscription", label: "My Fanvue", detail: "A little more of my world", href: url.href }];
+  return [{ id: "subscription", kind: "subscription", label: "Exclusive content ✨", detail: "Come see my private side", iconEmoji: "😈", href: url.href }];
 }
 
 function checkedUrl(value: string, domains: string[]) {

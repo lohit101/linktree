@@ -18,6 +18,8 @@ test("public HTML and Meta crawler responses contain no private contact data", a
     expect(html).not.toContain("https://www.fanvue.com/e2e_fixture");
     expect(html).not.toContain("Subscribe for exclusive fixture content.");
     expect(html).not.toContain("fanvue.com");
+    expect(html).not.toContain("Exclusive content");
+    expect(html).not.toContain("Come see my private side");
     expect(response.headers()["cache-control"]).toContain("no-store");
     expect(response.headers()["x-robots-tag"]).toContain("noindex");
   }
@@ -26,6 +28,7 @@ test("public HTML and Meta crawler responses contain no private contact data", a
   expect(normalHtml).not.toContain("https://www.fanvue.com/e2e_fixture");
   expect(normalHtml).not.toContain("Subscribe for exclusive fixture content.");
   expect(normalHtml).not.toContain("fanvue.com");
+  expect(normalHtml).not.toContain("Exclusive content");
 });
 
 test("direct, forged-cookie, forged-network and cross-origin access fail closed", async ({ request }) => {
@@ -50,9 +53,12 @@ test("simulated local visitor receives links, can hide them, and can reopen them
   await expect(email).toBeVisible();
   await expect(email).toHaveAttribute("href", "mailto:e2e-only@example.com");
   await expect(page.getByRole("link", { name: /Give me a call|Twitter|Pinterest/ })).toHaveCount(0);
-  await expect(page.getByRole("link", { name: /My Fanvue/ })).toHaveAttribute("href", "https://www.fanvue.com/e2e_fixture");
+  const featured = page.getByRole("link", { name: /Exclusive content/ });
+  await expect(featured).toHaveAttribute("href", "https://www.fanvue.com/e2e_fixture");
+  await expect(featured).toContainText("Exclusive content ✨");
+  await expect(featured.locator(".contact-emoji")).toHaveText("😈");
   await expect(page.getByText("Subscribe for exclusive fixture content.", { exact: true })).toBeVisible();
-  for (const [name, kind] of [[/Instagram/, "instagram"], [/My Fanvue/, "subscription"]] as const) {
+  for (const [name, kind] of [[/Instagram/, "instagram"], [/Exclusive content/, "subscription"]] as const) {
     const link = page.getByRole("link", { name });
     await link.evaluate(element => element.addEventListener("click", event => event.preventDefault()));
     const report = page.waitForRequest(request => request.url().endsWith("/api/events/link"));
@@ -67,10 +73,10 @@ test("simulated local visitor receives links, can hide them, and can reopen them
   await page.getByRole("button", { name: "Hide links" }).click();
   await ended;
   await expect(email).toBeVisible();
-  await expect(page.getByRole("link", { name: /My Fanvue/ })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: /Exclusive content/ })).toHaveCount(0);
   await expect(page.getByText("Subscribe for exclusive fixture content.", { exact: true })).toHaveCount(0);
   await page.getByRole("button", { name: "View my links" }).click();
-  await expect(page.getByRole("link", { name: /My Fanvue/ })).toBeVisible();
+  await expect(page.getByRole("link", { name: /Exclusive content/ })).toBeVisible();
 });
 
 test("an automation flag is rejected and the visitor can retry without data exposure", async ({ page }) => {
@@ -78,17 +84,17 @@ test("an automation flag is rejected and the visitor can retry without data expo
   await page.goto("/");
   await expect(page.getByRole("button", { name: "Try again" })).toBeVisible();
   await expect(page.getByRole("link", { name: /Email me/ })).toBeVisible();
-  await expect(page.getByRole("link", { name: /My Fanvue/ })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: /Exclusive content/ })).toHaveCount(0);
   await page.getByRole("button", { name: "Try again" }).click();
   await expect(page.getByRole("button", { name: "Try again" })).toBeVisible();
   await expect(page.getByRole("link", { name: /Email me/ })).toBeVisible();
-  await expect(page.getByRole("link", { name: /My Fanvue/ })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: /Exclusive content/ })).toHaveCount(0);
 });
 
 test("a copied valid session cannot be used by a Meta crawler", async ({ page, request }) => {
   await simulateVisitor(page);
   await page.goto("/");
-  await expect(page.getByRole("link", { name: /My Fanvue/ })).toBeVisible();
+  await expect(page.getByRole("link", { name: /Exclusive content/ })).toBeVisible();
   const cookies = await page.context().cookies();
   const session = cookies.find(cookie => cookie.name === "cloak-session")!;
   expect(session).toBeTruthy();
