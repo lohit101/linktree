@@ -1,0 +1,92 @@
+@import "tailwindcss";
+@theme inline { --font-sans: var(--font-geist-sans); }
+
+/* A centered link-in-bio layout. Dark violet is intentional for this brief.
+   Design dials: variance 3 / motion 3 / density 3. Circles for identity and tools;
+   20px corners for links and connection states. No real portrait was supplied. */
+:root {
+  --background: #100918;
+  --ink: #faf2ff;
+  --muted: #c1accd;
+  --accent: #d89aff;
+  --line: #553165;
+  --radius: 20px;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; min-height: 100dvh; background: var(--background); color: var(--ink); font-family: var(--font-geist-sans), sans-serif; -webkit-font-smoothing: antialiased; }
+body::before { content: ""; position: fixed; inset: 0; pointer-events: none; z-index: -1; background: radial-gradient(ellipse 650px 550px at 50% 15%, #57207960, transparent 85%), radial-gradient(ellipse 900px 500px at 50% 100%, #5c16733b, transparent 80%); }
+button, a, input { -webkit-tap-highlight-color: transparent; }
+button, input { font: inherit; }
+button, a { touch-action: manipulation; }
+button { cursor: pointer; }
+a { color: inherit; text-decoration: none; }
+button:focus-visible, a:focus-visible { outline: 3px solid #efc8ff; outline-offset: 5px; }
+::selection { background: #b255d7; color: white; }
+.site-shell { position: relative; isolation: isolate; width: min(660px, 100%); padding: 0 30px; margin-inline: auto; min-height: 100dvh; display: flex; flex-direction: column; }
+.ambient-light { position: fixed; pointer-events: none; z-index: -1; top: -400px; left: 50%; transform: translateX(-50%); width: 1000px; height: 700px; border-radius: 50%; border: 1px solid #aa56d320; box-shadow: 0 0 100px #9a39d511, inset 0 0 90px #9a39d511; }
+.site-header { height: 88px; display: flex; justify-content: space-between; align-items: center; }
+.header-flourish { color: #ca8ce9; padding-left: 5px; }
+.share-wrapper { position: relative; }
+.share-button { width: 42px; height: 42px; background: #271532a0; border: 1px solid #75518880; border-radius: 50%; display: grid; place-items: center; color: #f5defe; transition: background 180ms, border-color 180ms; }
+.share-button:hover { background: #472355; border-color: #ce8be9; }
+.share-status { position: absolute; top: 52px; right: 0; padding: 10px 14px; border: 1px solid #735182; border-radius: 12px; background: #2c153a; color: #f6e5ff; width: max-content; max-width: 250px; font-size: 12px; z-index: 5; }
+.share-status:empty { display: none; }
+.profile-layout { width: 100%; padding: 8px 0 0; }
+.profile-intro { text-align: center; }
+.avatar-ring { width: 116px; height: 116px; margin: 0 auto 25px; padding: 5px; position: relative; border: 1px solid #e0a0ff; border-radius: 50%; box-shadow: 0 0 14px #d19aff50, 0 0 55px #b32cdb35, inset 0 0 12px #e0a0ff40; }
+.avatar { width: 100%; height: 100%; display: grid; place-items: center; border-radius: 50%; background: linear-gradient(145deg, #50245f, #23112f 85%); border: 1px solid #9561a474; color: #f5d6ff; font-size: 32px; font-weight: 450; letter-spacing: -1.5px; text-shadow: 0 0 20px #d08ce677; }
+.avatar-heart { position: absolute; right: -2px; bottom: 1px; width: 29px; height: 29px; display: grid; place-items: center; background: #30123e; border: 1px solid #c885e3; color: #f0b7ff; border-radius: 50%; box-shadow: 0 0 12px #bf4ff64a; }
+h1 { font-size: 30px; font-weight: 600; letter-spacing: -.9px; line-height: 1.2; margin: 0; }
+.profile-bio { margin: 15px auto 0; max-width: 410px; font-size: 14px; line-height: 1.8; color: #d2bedb; white-space: pre-line; text-wrap: pretty; }
+.contact-section { margin-top: 32px; width: 100%; }
+.public-contacts { margin-top: 24px; width: 100%; }
+.private-bio { margin: -8px auto 29px; max-width: 340px; text-align: center; font-size: 14px; font-weight: 450; line-height: 1.65; color: #ecc7ff; text-wrap: balance; }
+.section-heading { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; padding: 0 5px; }
+h2 { font-size: 12px; font-weight: 450; color: #c2a8ce; margin: 0; }
+.connection-note { display: flex; align-items: center; gap: 5px; color: #d4aae6; font-size: 10px; }
+.contact-list { display: grid; gap: 14px; }
+.contact-link { display: flex; gap: 16px; align-items: center; min-height: 84px; padding: 18px 22px; background: linear-gradient(110deg, #2a1638e6, #24142fe6); border: 1px solid #704786; border-radius: var(--radius); box-shadow: inset 0 1px 0 #efb5ff09, 0 5px 20px #07020b20; transition: transform 180ms, border-color 180ms, box-shadow 180ms; animation: enter 250ms ease-out both; }
+.contact-link:hover { transform: translateY(-3px); border-color: #d29aec; box-shadow: 0 0 25px #a653cb30; }
+.contact-link[data-kind="subscription"] { background: linear-gradient(110deg, #9433c7, #702aa6); border-color: #e0a3ff; box-shadow: 0 0 12px #d174ff30, 0 0 35px #b947e52b, inset 0 1px 0 #f4d2ff38; }
+.contact-link[data-kind="subscription"]:hover { box-shadow: 0 0 20px #d174ff55, 0 0 45px #b947e53b; }
+.contact-icon { width: 37px; height: 37px; display: grid; place-items: center; color: #eac7ff; flex-shrink: 0; }
+.contact-link[data-kind="subscription"] .contact-icon, .contact-link[data-kind="subscription"] .contact-arrow { color: #fff3ff; }
+.contact-copy { display: grid; gap: 6px; min-width: 0; flex: 1; }
+.contact-label { font-size: 15px; font-weight: 550; color: #fff4ff; }
+.contact-detail { font-size: 12px; line-height: 1.4; color: #cab2d5; overflow-wrap: anywhere; }
+.contact-link[data-kind="subscription"] .contact-detail { color: #f4defb; }
+.contact-arrow { color: #bd96d0; flex-shrink: 0; transition: transform 180ms; }
+.contact-link:hover .contact-arrow { transform: translate(2px, -2px); }
+.hide-links { justify-self: center; font-size: 11px; color: #baa0c9; background: none; border: 0; padding: 10px 12px; text-decoration: underline; text-underline-offset: 4px; }
+.connection-loading, .connection-error { min-height: 102px; padding: 21px; background: #271433b3; border: 1px solid #573265; border-radius: var(--radius); }
+.loading-line { display: block; width: 43%; height: 7px; border-radius: 5px; background: #684078; animation: breathe 1.8s ease-in-out infinite; }
+.loading-line.short { width: 28%; margin-top: 10px; }
+.loading-caption { display: block; font-size: 11px; color: #c6a6d6; margin-top: 16px; }
+.connection-error p { font-size: 12px; line-height: 1.7; color: #d3b9df; margin: 0 0 15px; }
+.retry-button { display: inline-flex; align-items: center; gap: 8px; background: none; border: 0; padding: 0; color: #f1d5ff; font-size: 12px; }
+.reveal-button { display: flex; width: 100%; justify-content: space-between; align-items: center; min-height: 76px; border: 1px solid #8952a2; background: #30193e; color: #faeaff; padding: 20px 23px; border-radius: var(--radius); font-size: 14px; }
+.reveal-button:hover { background: #432052; }
+.empty-message { text-align: center; color: var(--muted); font-size: 13px; padding: 22px 0; }
+.challenge-container { max-width: 100%; }
+.challenge-container:not(:empty) { margin-bottom: 15px; }
+.honey-field { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.profile-footer { display: flex; justify-content: center; align-items: center; gap: 7px; padding: 30px 0 32px; margin-top: auto; font-size: 10px; color: #ab8dba; }
+.sr-only { position: absolute; height: 1px; width: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+@keyframes breathe { 50% { opacity: .4; } }
+@keyframes enter { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+@media (max-width: 600px) {
+  .site-shell { padding-inline: 23px; }
+  .site-header { height: 72px; }
+  .profile-layout { padding-top: 10px; }
+  .avatar-ring { width: 106px; height: 106px; margin-bottom: 23px; }
+  h1 { font-size: 28px; }
+  .profile-bio { font-size: 13px; max-width: 320px; line-height: 1.85; }
+  .contact-section { margin-top: 30px; }
+  .contact-link { min-height: 82px; padding: 17px; gap: 11px; }
+  .contact-label { font-size: 14px; }
+  .contact-detail { font-size: 11px; }
+  .private-bio { font-size: 13px; max-width: 280px; }
+}
+@media (max-width: 360px) { .site-shell { padding-inline: 18px; } .profile-bio { font-size: 12px; } .contact-link { padding-inline: 13px; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }

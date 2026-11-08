@@ -1,0 +1,18 @@
+# Inside your HTTPS server block. Replace the secret with PROXY_SHARED_SECRET.
+# Bind Next.js to loopback. Restrict direct origin access when hosted elsewhere.
+location / {
+    proxy_pass http://127.0.0.1:3000;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-Proto https;
+    proxy_set_header X-Cloak-Proxy-Secret "REPLACE_WITH_YOUR_PROXY_SHARED_SECRET";
+    proxy_set_header X-Cloak-Client-IP $remote_addr;
+    # Clear spoofable incoming geo/bot headers when this proxy doesn't provide them.
+    proxy_set_header X-Cloak-Country "";
+    proxy_set_header X-Cloak-Timezone "";
+    proxy_set_header X-Cloak-Bot-Score "";
+    proxy_set_header X-Cloak-Verified-Bot "";
+    proxy_cache off;
+    proxy_no_cache 1;
+    proxy_cache_bypass 1;
+}
