@@ -5,12 +5,12 @@ export function proxy(request: NextRequest) {
   const development = process.env.NODE_ENV === "development";
   const policy = [
     "default-src 'self'",
-    `script-src 'self' 'nonce-${nonce}' https://challenges.cloudflare.com${development ? " 'unsafe-eval'" : ""}`,
+    `script-src 'self' 'nonce-${nonce}'${development ? " 'unsafe-eval'" : ""}`,
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob:",
     "font-src 'self'",
-    `connect-src 'self' https://challenges.cloudflare.com${development ? " ws: wss:" : ""}`,
-    "frame-src https://challenges.cloudflare.com",
+    `connect-src 'self'${development ? " ws: wss:" : ""}`,
+    "frame-src 'none'",
     "frame-ancestors 'none'",
     "object-src 'none'",
     "base-uri 'self'",

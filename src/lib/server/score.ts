@@ -14,7 +14,7 @@ type ScoreInput = {
 };
 
 // A heuristic score out of 100, NOT a calibrated probability of being human.
-// No amount of forgeable device information can replace challenge validation.
+// Work completion only proves computation. Neither it nor forgeable signals prove humanity.
 export function scoreVisitor(input: ScoreInput) {
   const { signals: s, headers, network } = input;
   const reasons: string[] = [];
@@ -25,6 +25,7 @@ export function scoreVisitor(input: ScoreInput) {
   if (s.webdriver) return deny("automation");
   if (network.verifiedBot || (network.botScore !== null && network.botScore < 30)) return deny("network-bot");
   if (!s.cookiesEnabled) return deny("cookies");
+  if (!s.visible || s.screen.width < 1 || s.screen.height < 1 || s.viewport.width < 1 || s.viewport.height < 1) return deny("invalid-display");
 
   let score = 60;
   const add = (points: number, reason: string) => { score += points; reasons.push(reason); };

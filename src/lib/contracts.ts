@@ -29,7 +29,7 @@ export type BrowserSignals = z.infer<typeof browserSignalsSchema>;
 
 export const verificationSchema = z.object({
   nonce: z.string().regex(/^[a-f0-9]{48}$/),
-  token: z.string().max(2048),
+  counter: z.number().int().min(0).max(1048575),
   website: z.string().max(1000),
   signals: browserSignalsSchema,
 }).strict();
@@ -46,6 +46,5 @@ export type PrivateProfile = { contacts: Contact[]; bio: string | null };
 
 export type AccessStart = {
   nonce: string;
-  siteKey: string | null;
-  localDemo: boolean;
+  difficulty: number;
 };

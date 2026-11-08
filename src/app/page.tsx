@@ -15,7 +15,6 @@ export const dynamic = "force-dynamic";
 export default async function Home() {
   const requestHeaders = await headers();
   const crawler = isKnownCrawler(requestHeaders.get("user-agent") ?? "");
-  const nonce = requestHeaders.get("x-nonce") ?? "";
   const notificationHeaders = new Headers(requestHeaders);
   after(() => notifyVisit(notificationHeaders).then(() => {}));
   const publicContacts = getPublicContacts();
@@ -35,7 +34,7 @@ export default async function Home() {
           <p className="profile-bio">{profile.bio}</p>
         </section>
       </div>
-      {!crawler && <ContactAccess nonce={nonce} />}
+      {!crawler && <ContactAccess />}
       <section className="public-contacts" aria-labelledby="public-links-heading">
         <div className="section-heading"><h2 id="public-links-heading">Find me here</h2></div>
         <div className="contact-list">{publicContacts.map(contact => <ContactLink key={contact.id} contact={contact} />)}</div>

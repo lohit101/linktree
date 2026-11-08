@@ -1,18 +1,18 @@
 import "server-only";
 import { NextRequest, NextResponse } from "next/server";
-import { getAccessConfig, isLocalDemoRequest, ProtectionError } from "./config";
+import { getAccessConfig, ProtectionError } from "./config";
 import { cookieName, digest, lifetimes, makeBinding, readToken, signToken } from "./crypto";
 import { checkOrigin, checkRequest, getNetwork } from "./request";
 import { rateLimit } from "./state";
 
 export function accessContext(request: NextRequest, requireOrigin = true) {
-  const config = getAccessConfig();
+  const config = getAccessConfig(request);
   checkOrigin(request, config, requireOrigin);
   const network = getNetwork(request.headers, config);
-  checkRequest(request, network, config.production);
+  checkRequest(request, network);
   const userAgent = request.headers.get("user-agent") ?? "";
   const binding = makeBinding(config.secret, userAgent, network.ip);
-  return { config, network, binding, localDemo: isLocalDemoRequest(config, request) };
+  return { config, network, binding };
 }
 
 export async function limitAccess(request: NextRequest, context: ReturnType<typeof accessContext>, phase: "start" | "verify" | "contacts") {

@@ -3,11 +3,11 @@ import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import { z } from "zod";
 import type { AccessConfig } from "./config";
 
-export const lifetimes = { challenge: 300, session: 600, visit: 60 * 60 * 24 * 30 } as const;
+export const lifetimes = { challenge: 120, session: 600, visit: 60 * 60 * 24 * 30 } as const;
 type TokenKind = keyof typeof lifetimes;
 
 const tokenSchema = z.object({
-  v: z.literal(1),
+  v: z.literal(2),
   kind: z.enum(["challenge", "session", "visit"]),
   id: z.string().regex(/^[a-f0-9]{48}$/),
   binding: z.string().regex(/^[a-f0-9]{64}$/),
@@ -32,8 +32,8 @@ export function makeBinding(secret: string, userAgent: string, ip: string | null
 }
 
 export function signToken(config: Pick<AccessConfig, "secret">, kind: TokenKind, binding: string, id = randomId(), now = Date.now()) {
-  const iat = Math.floor(now / 1000);
-  const data = Buffer.from(JSON.stringify({ v: 1, kind, id, binding, iat, exp: iat + lifetimes[kind] })).toString("base64url");
+  const iat = Math.floor(now);
+  const data = Buffer.from(JSON.stringify({ v: 2, kind, id, binding, iat, exp: iat + lifetimes[kind] * 1000 })).toString("base64url");
   return `${data}.${digest(config.secret, "token", data)}`;
 }
 
@@ -45,9 +45,9 @@ export function readToken(config: Pick<AccessConfig, "secret">, value: string | 
     const parsed = tokenSchema.safeParse(JSON.parse(Buffer.from(data, "base64url").toString("utf8")));
     if (!parsed.success) return null;
     const token = parsed.data;
-    const seconds = Math.floor(now / 1000);
-    if (token.kind !== kind || token.exp <= seconds || token.iat > seconds + 10 ||
-      token.exp - token.iat !== lifetimes[kind] || !constantEqual(token.binding, binding)) return null;
+    const current = Math.floor(now);
+    if (token.kind !== kind || token.exp <= current || token.iat > current + 1000 ||
+      token.exp - token.iat !== lifetimes[kind] * 1000 || !constantEqual(token.binding, binding)) return null;
     return token;
   } catch { return null; }
 }

@@ -5,7 +5,7 @@ import { ProtectionError } from "@/lib/server/config";
 import { readSmallJson } from "@/lib/server/request";
 import { scoreVisitor } from "@/lib/server/score";
 import { consumeChallenge } from "@/lib/server/state";
-import { validateChallenge } from "@/lib/server/turnstile";
+import { validateWork } from "@/lib/server/work";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -19,20 +19,15 @@ export async function POST(request: NextRequest) {
     const data = parsed.data;
     const proof = readAccessCookie(request, context, "challenge");
     if (!proof || proof.id !== data.nonce) throw new ProtectionError();
-    const issuedAt = await consumeChallenge(data.nonce);
-    if (issuedAt === null) throw new ProtectionError();
-
-    // Cheap rejections precede the external validation request.
     if (data.website || data.signals.webdriver || !data.signals.cookiesEnabled) throw new ProtectionError();
-    const challengePassed = context.localDemo || await validateChallenge(context.config, data.token, data.nonce, context.network.ip);
+    const elapsed = Date.now() - proof.iat;
+    if (elapsed < 900 || !validateWork(data.nonce, data.counter)) throw new ProtectionError();
     const result = scoreVisitor({
       signals: data.signals, headers: request.headers, network: context.network,
-      challengePassed, returningVisitor: !!readAccessCookie(request, context, "visit"),
-      serverElapsedMs: Date.now() - issuedAt, honeypot: data.website,
+      challengePassed: true, returningVisitor: !!readAccessCookie(request, context, "visit"),
+      serverElapsedMs: elapsed, honeypot: data.website,
     });
-    if (result.denied || result.score < context.config.threshold) throw new ProtectionError();
-
-    // Scores, reasons, thresholds, provider responses, and contacts are not returned here.
+    if (result.denied || result.score < context.config.threshold || !consumeChallenge(data.nonce, proof.exp)) throw new ProtectionError();
     const response = privateJson({ ok: true });
     setAccessCookie(response, context, "session");
     setAccessCookie(response, context, "visit");

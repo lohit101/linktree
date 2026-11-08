@@ -1,12 +1,10 @@
 # Shilpa's link page
 
-A dark, neon-purple Next.js 16 link-in-bio page. Instagram and email are public for everyone, including crawlers. Fanvue and its subscription bio line are returned only after server-side verification. These are the only three supported contact links; legacy phone, Twitter, Pinterest and extra-link settings are ignored.
+A dark, neon-purple Next.js link-in-bio page. Instagram and email are public. The subscriber link and subscription bio appear only after a **code-only browser check**. No verification-provider account, database or external anti-bot script is required. Existing optional ntfy notifications remain supported.
 
-This provides best-effort scraping resistance, not guaranteed exclusion of Meta, automated browsers, OSINT tools or human reviewers. A visitor who passes verification can copy the revealed content.
+**This is basic scraping resistance, not proof of humanity.** An automated browser can imitate the signals, perform the work and receive the same content as a person. It does not guarantee exclusion of Instagram's review systems, advanced crawlers or human reviewers. Revealed links can be copied.
 
-## Local development
-
-Requires Node.js 20.9+ and npm.
+## Run
 
 ```sh
 npm install
@@ -14,22 +12,43 @@ npm run setup
 npm run dev -- --port 3004
 ```
 
-The current ignored `.env.local` uses `APP_ORIGIN=http://127.0.0.1:3004`. Open that exact origin. Setup preserves an existing `.env.local`; for a fresh checkout it generates signing/proxy secrets and fictional demo contacts. If you choose another port, update `APP_ORIGIN` to match.
+The current `.env.local` uses `http://127.0.0.1:3004`. For a fresh checkout setup generates an ignored `.env.local` with a signing secret and fictional public contact data; it preserves an existing file. Match `APP_ORIGIN` to your local URL if you choose another port. There is no demo bypass: local and production run the same browser-work/scoring flow.
 
-Edit public name/bio in `src/profile.ts`. Contact values are runtime server variables:
+Public name/bio live in `src/profile.ts`. The Instagram photo is a local snapshot at `public/profile.jpg`, with no image request to Instagram. To refresh it, replace the file.
 
-- `CONTACT_INSTAGRAM_URL`: publicly rendered Instagram link.
-- `CONTACT_EMAIL`: publicly rendered email link.
-- `CONTACT_FANVUE_URL`: protected subscriber destination.
-- `PRIVATE_BIO`: protected subscriber bio line, maximum 280 characters.
+## Configuration
 
-Public contact values intentionally appear in HTML/RSC/browser props. Never place the subscriber URL or subscriber copy in `src/profile.ts`, `public/`, metadata, client source, or `NEXT_PUBLIC_*` variables. The real local contacts are configured already. `ALLOW_LOCAL_DEMO=false` keeps the real subscriber destination locked until actual challenge credentials are set. Previously issued local demo sessions were invalidated when real contacts were introduced.
+Only your existing server signing secret and contact values are needed:
+
+- `SESSION_SECRET`: a stable random secret of at least 32 characters, identical on all instances. Setup generates it; production can use the one already copied to the host. Keep it out of Git and `NEXT_PUBLIC_*` variables.
+- `APP_ORIGIN`: the exact local/self-hosted origin. **On Vercel the routed HTTPS request origin is derived automatically**, so a copied localhost value cannot block production verification or tap reports.
+- `CONTACT_INSTAGRAM_URL`, `CONTACT_EMAIL`: intentionally public links, including in initial HTML/RSC/browser props.
+- `CONTACT_FANVUE_URL`, `PRIVATE_BIO`: server-only subscriber destination and optional verified-only sentence. Never put these in public source, metadata, image assets or public environment variables.
+- `HUMANITY_THRESHOLD`: optional heuristic threshold, default 75. This is not a probability.
+- `PROXY_SHARED_SECRET`: optional for an authenticated client-IP adapter on other hosts. It is not required to run the app. Native Vercel IP/country/timezone headers work automatically in the production Vercel runtime; arbitrary forwarded headers are ignored elsewhere.
+
+Only Instagram, email and the subscriber link are supported. Legacy phone/Twitter/Pinterest/extra-link settings do not add anything to the page. Old verification-provider/database/bypass settings are ignored and can be deleted from the hosting environment.
+
+See [Vercel deployment notes](deploy/VERCEL.md). `.env.local` is not uploaded by Git; the private contact values and existing signing secret still need to be present in your host's environment. No new service credentials are required.
+
+## Browser checks
+
+1. `/` renders the public bio, photo, Instagram and email. Recognized crawler User-Agents receive no interactive subscriber section. User-Agent identification is only a weak hint; unknown bots may look normal.
+2. The browser obtains a random nonce and an HttpOnly signed cookie containing the nonce, browser/IP binding, issue time and a two-minute expiry. This challenge is **stateless**: another serverless replica can validate it without querying a database.
+3. Using the browser's built-in Web Crypto, the browser finds a counter for `SHA-256(nonce + ':' + counter)` beginning with three zero hex digits. Expected work is about 4,096 hashes in small asynchronous batches, capped at 12 seconds. This proves only computation, not humanity. HTTPS (or localhost) and a modern browser are required.
+4. The browser submits the solution plus dimensions, viewport/pixel ratio, locale/timezone, visibility, cookie support, an automation flag, dwell time and an interaction hint. These observations are forgeable. No general browsing-history access, GPS prompt, canvas/WebGL fingerprint or device identity database is used.
+5. The server validates signature, scope, expiry, binding, nonce, SHA-256 work and minimum elapsed time, then applies its heuristic score. Known crawler UAs, reported automation, honeypot input, invisible/zero-size displays and low authenticated edge scores are rejected. Missing optional network metadata receives no bonus; it is not a configuration error.
+6. On success a 10-minute HttpOnly/SameSite=Strict cookie is issued (Secure and `__Host-` prefixed in production). `/api/contacts` checks this cookie and crawler/network conditions again before returning subscriber data. Scores and decision rules stay server-side. The public work protocol and signal collector are observable.
+
+The subscriber UI clears on tab hiding/restoration and after five minutes. The signed previous-success cookie lasts 30 days and records only a successful visit to this site. Instagram/email remain public at all times. Version 2 cookies replace the earlier token format so old sessions/challenges cannot skip the new flow.
+
+Rate limits and spent-nonce detection use a bounded in-process map in both development and production. **They are per instance, not distributed guarantees.** Cold starts reset the cache, replicas have independent budgets, and a valid challenge/solution may be replayed on another replica during its two-minute lifetime. The signed challenge still verifies there without shared state. Global single-use enforcement would require shared storage, which this version deliberately does not use.
+
+All profile/API responses are private/no-store, with CDN-specific no-store headers. Do not add a shared cache in front of `/` or `/api/*`. `robots.txt` and `noindex` are advisory. Moving the destination off initial HTML prevents straightforward collection; it does not make it undiscoverable or remove previously published copies elsewhere.
 
 ## ntfy notifications
 
-The current local environment enables `https://ntfy.sh/shilpa-baja-linktree`. Subscribe to `shilpa-baja-linktree` in the ntfy app or web app. A clearly labelled setup notification was accepted by the live ntfy service during integration.
-
-Runtime server configuration:
+The existing local environment publishes to `https://ntfy.sh/shilpa-baja-linktree`. Subscribe to `shilpa-baja-linktree` in ntfy to receive alerts. Notification configuration stays server-only:
 
 ```dotenv
 NTFY_ENABLED=true
@@ -39,59 +58,26 @@ NTFY_INCLUDE_USER_AGENT_UNTIL=2026-11-15T12:02:05Z
 NTFY_DAILY_LIMIT=240
 ```
 
-`NTFY_TOKEN` is optional for an unreserved public topic. For an access-protected topic, use a token authorized to publish there. Neither the token nor topic is sent to browser code. Set `NTFY_ENABLED=false` to stop publishing.
+Page-request notifications include timestamp and a User-Agent classification hint, including recognized crawler requests. Temporary UA reporting includes up to 512 sanitized characters until the UTC expiry above, then stops automatically. It does not erase already delivered messages. Spoofed or ordinary-looking User-Agents do not establish whether a request came from Instagram.
 
-### What is sent
+Next.js `after()` sends visit notifications without delaying the page response. RSC/prefetch requests are excluded. Visits count requests and refreshes, not unique people. Link taps send a same-origin keepalive request without delaying navigation. The categories are Instagram, Email and Subscriber link; subscriber reporting also requires a valid access cookie. No subscriber URL, subscriber copy, email address, raw visitor IP, query string, cookies or credentials are included in the notification payload.
 
-- **Profile visit:** a timestamp and a User-Agent-based hint (recognized crawler/automation versus browser-like or unrecognized). Actual initial document requests, including recognized crawler requests, trigger notifications through Next.js `after()`. RSC fetches and known prefetch requests are excluded. This counts page requests, not unique people, and includes refreshes.
-- **Temporary diagnostics:** until the UTC expiry above, visit notifications also include the request's User-Agent (control characters removed, up to 512 characters). Forwarding stops automatically at expiry. Blank, invalid or expired configuration disables it. This does not erase previously delivered messages or notifications. User-Agent strings can be spoofed; a normal-looking one cannot establish that a visitor is or is not Instagram.
-- **Link tap:** the generic category Instagram, Email, or Subscriber link and a timestamp. No actual subscriber destination, subscriber copy, email address, visitor IP, query parameters, cookies or credentials are included. A subscriber tap report requires a valid verified session again.
+Notifications are best effort. Context-menu navigation, copied URLs, disabled scripts, network errors, false/forged reports and provider limits can produce missed or misleading events. Limits are 12/minute per event and hashed visitor grouping, 30/minute per instance and `NTFY_DAILY_LIMIT` (default 240) per 24 hours per instance. Similar UAs share a grouping when no trusted IP is available. Cold starts/replicas reset or split budgets, so actual ntfy account-wide quotas may still be reached. Failed notification delivery is skipped; there is no durable queue or retry and it does not block access.
 
-Ordinary taps, keyboard link activation and middle clicks send a same-origin, keepalive request to `/api/events/link`. Navigation is not delayed while the server publishes. Copying a URL, opening through a context menu, disabled scripts, networking failure, abuse or notification-provider limits can lead to missed or forged reports. These are best-effort notifications, not audited analytics or proof of human activity.
-
-Notifications are limited to 12 per minute per event category and hashed visitor/network grouping, 30 per minute globally and 240 per rolling 24-hour budget by default. If a client IP is unavailable, similar User-Agents share a grouping. The shared state adapter provides atomic rate limits with Redis, or process-local limits in development/explicit single-process mode. Failures skip notification delivery rather than preventing the page or link navigation. There is no durable delivery queue or automatic retry. The default daily budget leaves a small margin below ntfy.sh's documented anonymous 250-message daily limit; configure it for your actual plan if needed.
-
-**Unreserved ntfy topics can be publicly readable and writable.** The requested topic is identifiable. Reserve/access-protect it for private diagnostics; use `NTFY_TOKEN` for publishing. Another publisher may otherwise inject messages. ntfy normally retains messages for about 12 hours, subscribers can retain them longer, and ntfy/hosting providers have their own processing policies. User-Agent forwarding is the expressly enabled temporary diagnostic exception to the minimal notification payload.
-
-## Subscriber verification
-
-1. `/` always server-renders public name/bio and public Instagram/email links. Identified crawlers do not receive the interactive subscriber section.
-2. A browser requests a signed, five-minute challenge bound to User-Agent and trusted IP. A server-side nonce can be spent only once.
-3. Browser observations include dimensions, viewport, pixel ratio, locale/timezone, visibility, cookie support, an automation flag, elapsed time and whether an interaction occurred. These are untrusted hints, not attestation. No invasive canvas fingerprint, GPS prompt or general browsing-history access is used.
-4. Production requires a real Cloudflare Turnstile result checked with Siteverify, including hostname, action and challenge nonce. A client-supplied success flag is insufficient. Test keys and the local demo bypass are rejected in production.
-5. A server-only heuristic score combines that challenge with request headers, trusted IP/coarse edge location/optional edge bot score, and this site's signed previous-success cookie. The default threshold of 75 is a heuristic, not a 75% probability. Reported automation, known crawlers and low trusted edge scores are denied regardless of other signals.
-6. A successful visitor gets a short-lived HttpOnly/SameSite=Strict cookie (Secure with `__Host-` in production). Only `/api/contacts` can return the subscriber destination and private bio, after checking session, binding and crawler/network conditions again. Public links do not depend on this endpoint or on challenge configuration.
-
-The subscriber section clears on tab hiding/restoration and after five minutes. Public links remain available. All profile and API responses are `private, no-store`, with CDN-specific no-store headers. `robots.txt` and `noindex` discourage cooperative indexing but are not access controls. The browser collector, challenge integration and network protocol are observable; scoring rules, secrets and ungranted subscriber data stay server-side.
-
-## Production
-
-The public profile works without Turnstile credentials. Subscriber access fails closed until configured.
-
-**For the current Vercel deployment, follow [the Vercel setup checklist](deploy/VERCEL.md).** Native Vercel client-IP headers are now supported, so a separate authenticated proxy is only required on other hosts. Vercel/serverless still requires real Turnstile credentials, a stable signing secret, the correct live `APP_ORIGIN`, and shared Redis.
-
-1. Set the exact HTTPS `APP_ORIGIN` without a trailing slash. Keep a stable random `SESSION_SECRET` of at least 32 characters across replicas. Generate secrets with `openssl rand -hex 48`. Set the contact, private bio and ntfy runtime variables on your production host; `.env.local` is not deployed automatically.
-2. Create a Managed Cloudflare Turnstile widget for the public hostname and set `TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY`. Production rejects test keys. Its interaction-only appearance requests extra interaction only when required by the provider.
-3. On Vercel, the native runtime adapter uses Vercel's overwritten client-IP header. On other hosts, put a trusted proxy in front of Next.js. Set a separate random `PROXY_SHARED_SECRET` of at least 32 characters on both sides. Outside Vercel, incoming network headers are trusted only with this secret. Strip/overwrite incoming `X-Cloak-*` headers; never forward them unchanged or log the secret.
-   - `deploy/cloudflare-worker.ts` forwards Cloudflare's client IP/country/timezone and optional Bot Management scores. Route it on the public hostname and set `ORIGIN_URL` to the separate Next.js HTTPS origin. Store the proxy secret in Worker secrets. Numeric Bot Management scoring requires an eligible plan.
-   - `deploy/nginx.conf.example` supports a VPS. Replace the proxy secret, configure TLS and bind Node to loopback. If behind another proxy, configure real-IP handling only for that provider's trusted ranges. Do not trust arbitrary `X-Forwarded-For`.
-4. For serverless or replicas, set `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`. For exactly one long-lived Node process, explicitly set `SINGLE_PROCESS_MEMORY=true` instead. Shared state is needed for distributed challenge consumption and notification/access rate limits.
-5. Run `npm run build` and `npm start`. The provided start command binds to loopback. Managed hosts that require a public bind can use `next start --hostname 0.0.0.0 --port $PORT`, with origin access restricted to the trusted edge. Do not cache `/` or `/api/*`. Ensure your host supports Next.js `after()` and sufficient request duration for outbound notification requests.
-
-Untrusted direct-origin requests cannot obtain subscriber access. Challenges and IP changes may also reject legitimate visitors, especially in restrictive in-app browsers. Previously published data, information on other services and copies by verified visitors cannot be protected by this page.
+Unreserved ntfy topics may be publicly readable and writable. Reserve/access-protect the topic if diagnostics should be private, and set `NTFY_TOKEN` if publishing requires authentication. ntfy normally caches messages for about 12 hours, and subscribers may retain them longer. Temporary UA reporting remains the explicitly requested diagnostic exception to the minimal notification payload.
 
 ## Checks
 
 ```sh
-npm run typecheck
 npm run check:config
+npm run typecheck
 npm test
 npm run test:e2e
 npm run build
 ```
 
-The browser suite uses isolated Google Chrome with fictional contacts, notifications explicitly disabled, port 3104 and `.next-test` output. It can coexist with the normal development server. Unit tests mock ntfy, so automated checks do not publish visitor data or spam the live topic. Tests cover public visibility for crawler UAs, protected destination/bio separation, session expiry/tampering/replay, forged network headers, private tap authorization, same-origin reporting, actual browser tap events, provider failure and automatic UA diagnostic expiry. They do not certify exclusion of real Meta review infrastructure.
+Browser tests use isolated Chrome, fictional contacts, notifications disabled, port 3104 and `.next-test` output. They run the same actual work solver as production, with simulated browser observations, and coexist with the normal development server. Unit tests mock notification delivery. Coverage includes token tampering/expiry, same-origin enforcement, forged headers, invalid/missing work, replay on the same process, stateless Vercel flows, public/private separation, portrait loading, mobile layout, link events and UA expiry. Tests do not certify real-world human identification.
 
-The design uses a centered Linktree-style layout, dark plum, neon violet, the requested Instagram profile picture and stacked buttons. The picture is a local snapshot at `public/profile.jpg`, so visitors make no image request to Instagram and expiring CDN URLs are not embedded. To update it later, replace that file. Design dials: variance 3 / motion 3 / density 3. The unused forest asset remains from the earlier theme ([photo source](https://unsplash.com/photos/hg5Tx6c_5nc)).
+The UI uses a centered Linktree-style layout with dark plum, neon violet and stacked buttons. Design dials: variance 3 / motion 3 / density 3. The unused forest asset remains from the original theme ([source](https://unsplash.com/photos/hg5Tx6c_5nc)).
 
-Sources: [ntfy publishing, topic access, caching and limits](https://docs.ntfy.sh/publish/), [Turnstile server validation](https://developers.cloudflare.com/turnstile/get-started/server-side-validation/), [Cloudflare bot scores](https://developers.cloudflare.com/bots/concepts/bot-score/), [robots.txt limitations](https://developers.google.com/search/docs/crawling-indexing/robots/intro).
+References: [Web Crypto digest](https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto/digest), [Vercel request headers](https://vercel.com/docs/headers/request-headers), [ntfy publishing and limits](https://docs.ntfy.sh/publish/), [robots.txt limitations](https://developers.google.com/search/docs/crawling-indexing/robots/intro).

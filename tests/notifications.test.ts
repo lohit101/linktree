@@ -11,8 +11,7 @@ before(() => {
   Object.assign(process.env, {
     NODE_ENV: "test", NTFY_ENABLED: "true", NTFY_TOPIC: "isolated-unit-topic", NTFY_TOKEN: "unit-test-token",
     SESSION_SECRET: "notification-unit-signing-secret-at-least-32-characters",
-    PROXY_SHARED_SECRET: "", APP_ORIGIN: "http://127.0.0.1:3000", ALLOW_LOCAL_DEMO: "true",
-    UPSTASH_REDIS_REST_URL: "", UPSTASH_REDIS_REST_TOKEN: "", NTFY_DAILY_LIMIT: "240",
+    PROXY_SHARED_SECRET: "", APP_ORIGIN: "http://127.0.0.1:3000", NTFY_DAILY_LIMIT: "240",
     NTFY_INCLUDE_USER_AGENT_UNTIL: "2030-01-01T00:00:00.000Z",
   });
   globalThis.fetch = (async (url, options) => {

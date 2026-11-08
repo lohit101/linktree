@@ -2,36 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import { IconCheck, IconChevronRight, IconRefresh } from "@tabler/icons-react";
+import { solveBrowserWork, WORK_DIFFICULTY } from "@/lib/work";
 import { ContactLink } from "./contact-link";
 import type { AccessStart, BrowserSignals, PrivateProfile } from "@/lib/contracts";
-
-type Turnstile = {
-  render: (container: HTMLElement, options: Record<string, unknown>) => string;
-  remove: (id: string) => void;
-};
-declare global { interface Window { turnstile?: Turnstile } }
-
-let scriptPromise: Promise<Turnstile> | null = null;
-
-function loadTurnstile(nonce: string): Promise<Turnstile> {
-  if (window.turnstile) return Promise.resolve(window.turnstile);
-  if (scriptPromise) return scriptPromise;
-  scriptPromise = new Promise<Turnstile>((resolve, reject) => {
-    const script = document.createElement("script");
-    script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
-    script.async = true;
-    script.nonce = nonce;
-    const fail = () => { script.remove(); scriptPromise = null; reject(new Error("Couldn’t finish the connection. Please try again.")); };
-    const timeout = window.setTimeout(fail, 15000);
-    script.onload = () => {
-      window.clearTimeout(timeout);
-      if (window.turnstile) resolve(window.turnstile); else fail();
-    };
-    script.onerror = () => { window.clearTimeout(timeout); fail(); };
-    document.head.appendChild(script);
-  });
-  return scriptPromise;
-}
 
 function collectSignals(started: number, interacted: boolean): BrowserSignals {
   return {
@@ -69,13 +42,12 @@ async function getJson<T>(url: string, signal: AbortSignal, body?: unknown): Pro
   return data;
 }
 
-export function ContactAccess({ nonce }: { nonce: string }) {
+export function ContactAccess() {
   const [phase, setPhase] = useState<"checking" | "ready" | "error" | "hidden">("checking");
   const [content, setContent] = useState<PrivateProfile | null>(null);
   const contacts = content?.contacts ?? [];
   const [message, setMessage] = useState("");
   const [attempt, setAttempt] = useState(0);
-  const widget = useRef<HTMLDivElement>(null);
   const honeypot = useRef<HTMLInputElement>(null);
   const interacted = useRef(false);
   const started = useRef(0);
@@ -104,10 +76,7 @@ export function ContactAccess({ nonce }: { nonce: string }) {
   useEffect(() => {
     const controller = new AbortController();
     let disposed = false;
-    let widgetId: string | undefined;
-    let turnstile: Turnstile | undefined;
     let waitTimer: ReturnType<typeof setTimeout> | undefined;
-    let widgetTimer: ReturnType<typeof setTimeout> | undefined;
 
     const ready = (data: PrivateProfile) => {
       if (disposed || document.hidden) return;
@@ -129,27 +98,14 @@ export function ContactAccess({ nonce }: { nonce: string }) {
           if ((error as { status?: number }).status !== 401) throw error;
         }
         const challenge = await getJson<AccessStart>("/api/access/start", controller.signal, {});
-        const wait = new Promise<void>(resolve => { waitTimer = setTimeout(resolve, 1100); });
-        let token = "";
-        if (!challenge.localDemo) {
-          turnstile = await loadTurnstile(nonce);
-          if (disposed || !widget.current) return;
-          token = await new Promise<string>((resolve, reject) => {
-            widgetTimer = setTimeout(() => reject(new Error("The connection timed out. Please try again.")), 120000);
-            widgetId = turnstile!.render(widget.current!, {
-              sitekey: challenge.siteKey, action: "contact_access", cData: challenge.nonce,
-              theme: "dark", size: "flexible", appearance: "interaction-only", retry: "never",
-              callback: (value: string) => { clearTimeout(widgetTimer); resolve(value); },
-              "error-callback": () => { clearTimeout(widgetTimer); reject(new Error("Couldn’t finish the connection. Please try again.")); },
-              "expired-callback": () => { clearTimeout(widgetTimer); reject(new Error("The connection expired. Please try again.")); },
-              "timeout-callback": () => { clearTimeout(widgetTimer); reject(new Error("The connection timed out. Please try again.")); },
-            });
-          });
-        }
-        await wait;
+        if (challenge.difficulty !== WORK_DIFFICULTY) throw new Error("Please refresh the page and try again.");
+        const [, counter] = await Promise.all([
+          new Promise<void>(resolve => { waitTimer = setTimeout(resolve, 1100); }),
+          solveBrowserWork(challenge.nonce, controller.signal),
+        ]);
         if (disposed) return;
         await getJson("/api/access/verify", controller.signal, {
-          nonce: challenge.nonce, token, website: honeypot.current?.value ?? "",
+          nonce: challenge.nonce, counter, website: honeypot.current?.value ?? "",
           signals: collectSignals(started.current, interacted.current),
         });
         const data = await getJson<PrivateProfile>("/api/contacts", controller.signal);
@@ -159,8 +115,6 @@ export function ContactAccess({ nonce }: { nonce: string }) {
         setContent(null);
         setMessage(error instanceof Error ? error.message : "Couldn’t open these links. Please try again.");
         setPhase("error");
-      } finally {
-        if (widgetId) turnstile?.remove(widgetId);
       }
     };
 
@@ -171,11 +125,9 @@ export function ContactAccess({ nonce }: { nonce: string }) {
       controller.abort();
       clearTimeout(initialTimer);
       clearTimeout(waitTimer);
-      clearTimeout(widgetTimer);
       if (expiration.current) clearTimeout(expiration.current);
-      if (widgetId) turnstile?.remove(widgetId);
     };
-  }, [attempt, nonce]);
+  }, [attempt]);
 
   const hide = async () => {
     setContent(null);
@@ -194,7 +146,6 @@ export function ContactAccess({ nonce }: { nonce: string }) {
         <label htmlFor="website">Website</label>
         <input ref={honeypot} id="website" name="website" type="text" tabIndex={-1} autoComplete="off" />
       </div>
-      <div ref={widget} className="challenge-container" />
       <div aria-live="polite" aria-atomic="true">
         {phase === "checking" && <div className="connection-loading" role="status">
           <span className="loading-line" /><span className="loading-line short" />

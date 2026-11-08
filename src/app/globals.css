@@ -69,8 +69,6 @@ h2 { font-size: 12px; font-weight: 450; color: #c2a8ce; margin: 0; }
 .reveal-button { display: flex; width: 100%; justify-content: space-between; align-items: center; min-height: 76px; border: 1px solid #8952a2; background: #30193e; color: #faeaff; padding: 20px 23px; border-radius: var(--radius); font-size: 14px; }
 .reveal-button:hover { background: #432052; }
 .empty-message { text-align: center; color: var(--muted); font-size: 13px; padding: 22px 0; }
-.challenge-container { max-width: 100%; }
-.challenge-container:not(:empty) { margin-bottom: 15px; }
 .honey-field { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .profile-footer { display: flex; justify-content: center; align-items: center; gap: 7px; padding: 30px 0 32px; margin-top: auto; font-size: 10px; color: #ab8dba; }
 .sr-only { position: absolute; height: 1px; width: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }

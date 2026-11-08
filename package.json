@@ -18,7 +18,6 @@
   "license": "MIT",
   "dependencies": {
     "@tabler/icons-react": "^3.50.0",
-    "@upstash/redis": "^1.41.0",
     "geist": "^1.9.2",
     "next": "^16.4.5",
     "react": "^19.3.1",

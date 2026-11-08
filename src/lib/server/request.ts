@@ -61,11 +61,10 @@ export function checkOrigin(request: Request, config: AccessConfig, requireOrigi
     (fetchSite && !["same-origin", "none"].includes(fetchSite))) throw new ProtectionError();
 }
 
-export function checkRequest(request: Request, network: NetworkContext, production: boolean) {
+export function checkRequest(request: Request, network: NetworkContext) {
   if (isKnownCrawler(request.headers.get("user-agent") ?? "") || network.verifiedBot ||
     (network.botScore !== null && network.botScore < 30)) throw new ProtectionError();
-  // Direct access to the origin cannot bypass the trusted network layer.
-  if (production && (!network.trusted || !network.ip)) throw new ProtectionError(503);
+  // Missing trusted network metadata receives no network bonus. It is not a setup error.
 }
 
 export async function readSmallJson(request: Request): Promise<unknown> {
